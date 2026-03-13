@@ -1,4 +1,4 @@
-# Creative Commons Attribution 4.0 International License (CC BY 4.0)
+Creative Commons Attribution 4.0 International License (CC BY 4.0)
 
 Copyright (c) 2026 AR-VR-Group-6
 
@@ -9,31 +9,31 @@ This work is licensed under the Creative Commons Attribution 4.0 International L
 
 But there’s one condition:
 
-1. **Give Credit**: You need to give appropriate credit to the original author(s), provide a link to the license, and indicate if you made any changes. You can do this however you like, but you cannot suggest that the author(s) endorse you or your use of the material.
+1. Give Credit: You need to give appropriate credit to the original author(s), provide a link to the license, and indicate if you made any changes. You can do this however you like, but you cannot suggest that the author(s) endorse you or your use of the material.
 
-2. **No Extra Restrictions**: You can’t use legal terms or technology that restrict others from doing what this license allows them to do.
+2. No Extra Restrictions: You can’t use legal terms or technology that restrict others from doing what this license allows them to do.
 
-### Things You Can’t Do:
+Things You Can’t Do:
 
 - Don’t use the material for anything unlawful or illegal.
 - Don’t mislead people into thinking the original authors endorse you or your use of the project.
 
-### No Warranty:
+No Warranty:
 
 This software is provided *as is*. The authors do not provide any warranties or guarantees about it. If something goes wrong when you use this software, we are not responsible for any damage or loss.
 
 ---
 
-### **Your Rights & Responsibilities**:
+Your Rights & Responsibilities:
 
 By using this project, you acknowledge that you understand and agree to the terms in this license. You also agree that:
 
-- **All rights** related to the project remain with the original author(s). The work stays the intellectual property of the author(s).
-- You **must** always give proper credit when you use, share, or adapt the work in any way.
+- All rights related to the project remain with the original author(s). The work stays the intellectual property of the author(s).
+- You must always give proper credit when you use, share, or adapt the work in any way.
 
 ---
 
-### **Disclaimer**:
+Disclaimer:
 
 This software is provided "as is," without any guarantees or warranties, either express or implied, including but not limited to warranties of merchantability or fitness for a particular purpose. In no case will the author(s) be liable for any damages, claims, or other issues arising from using the software.
 
