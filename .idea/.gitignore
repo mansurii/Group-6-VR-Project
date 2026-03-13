@@ -1,0 +1,28 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# WebStorm/JetBrains IDE files
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Build directories
+/dist/
+/build/
+
+# Node.js
+node_modules/
