@@ -1,11 +1,23 @@
-**AR-VR-Group-6**
+# **AR-VR-Group-6**
 
-**Project Documentation**
+## Project Documentation
 
-Project Directory:
-- Index.html: Main point of the website.
-- site1.html: LSBU Hub.
-- site2.html: LSBU Active.
-- site3.html: Keyworth Building.
-- site4.html: Borough Road Building.
-- server.py: Local server running on port 5000.
+**Project Directory & Folder Structure:**
+- **`index.html`**: Main point of the website. The landing page that links to all other VR experiences.
+- **`site1.html`**: LSBU Hub. VR scene for LSBU Hub.
+- **`site2.html`**: LSBU Active. VR scene for LSBU Active.
+- **`site3.html`**: Keyworth Building. VR scene for the Keyworth Building.
+- **`site4.html`**: Borough Road Building. VR scene for the Borough Road Building.
+- **`server.py`**: Python server running on port 5000 to serve the website locally.
+
+- **`/assets/`**: Folder for all media (images, models, audio, etc.).
+    - **`.gitkeep`**: Ensures the folder is tracked by Git even though it's empty for now.
+- **`/css/`**: Folder for CSS files.
+    - **`.gitkeep`**: Ensures the folder is tracked by Git even though it's empty for now.
+- **`/js/`**: Folder for JavaScript files.
+    - **`.gitkeep`**: Ensures the folder is tracked by Git even though it's empty for now.
+- **`/lib/`**: External libraries (optional).
+    - **`aframe.min.js`**: A-Frame library stored locally.
+- **`requirements.txt`**: If using any backend or other dependencies (for Python, etc.).
+- **`LICENSE.txt`**: Project License.
+- **`README.md`**: Project documentation redirecting to [ProjectDocumentation.md](./ProjectDocumentation.md).
