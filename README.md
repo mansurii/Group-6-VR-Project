@@ -1,5 +1,6 @@
-AR-VR-Group-6
-Project Documentation
+**AR-VR-Group-6**
+
+**Project Documentation**
 
 Project Directory:
 - Index.html: Main point of the website.
@@ -7,4 +8,4 @@ Project Directory:
 - site2.html: LSBU Active.
 - site3.html: Keyworth Building.
 - site4.html: Borough Road Building.
-- server.py: local server running on port 5000.
+- server.py: Local server running on port 5000.
