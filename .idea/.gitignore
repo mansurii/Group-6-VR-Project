@@ -1,3 +1,16 @@
+# Python Bytecode
+__pycache__/
+*.pyc
+
+# macOS and Windows system files
+.DS_Store
+Thumbs.db
+
+# Environment files
+*.env
+.env
+.env.local
+
 # Python Virtual Environment
 .venv/
 
@@ -22,13 +35,9 @@
 # Logs
 *.log
 
-# Environment files
-.env
-.env.local
-
 # Build directories
 /dist/
 /build/
 
-# Node.js
+# Node.js modules
 node_modules/
