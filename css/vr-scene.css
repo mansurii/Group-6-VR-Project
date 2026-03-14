@@ -1,0 +1,433 @@
+/*
+  vr-scene.css
+  Styles for all four VR scene pages (site1 through site4).
+  Each site page imports this via its own siteN.css file.
+
+  This covers the layout of the scene page itself — the topbar,
+  the video placeholder, the controls bar, and the thumbnail strip.
+  It does NOT include any A-Frame styles (you handle that yourself).
+
+  Contents:
+    1.  Page body layout (full-height flex column)
+    2.  VR wrapper (fills the space between header and footer)
+    3.  Scene top bar (scene number + title)
+    4.  Video placeholder (shown until you add your footage)
+    5.  Video controls bar
+    6.  Progress bar inside the controls
+    7.  Timestamp and subtitle label
+    8.  Thumbnail strip
+    9.  Subtitle text overlay (shown when CC is toggled on)
+    10. Left/right area navigation arrows
+    11. Footer override for VR pages (relative, not fixed)
+    12. Responsive tweaks
+*/
+
+
+/* ─────────────────────────────────────
+   1. Page Body Layout
+   Sets up the full-height flex column
+   so the VR content fills the screen properly
+───────────────────────────────────── */
+body.vr-page {
+    padding-bottom: 0;   /* override the global footer padding */
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+/* ─────────────────────────────────────
+   2. VR Wrapper
+   The main container that holds everything
+   between the topbar and the footer
+───────────────────────────────────── */
+.vr-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* needed for flex children to scroll correctly */
+}
+
+
+/* ─────────────────────────────────────
+   3. Scene Top Bar
+   The narrow bar just below the header
+   showing the scene number badge and title
+───────────────────────────────────── */
+.scene-topbar {
+    height: 52px;
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+}
+
+.scene-topbar h1 {
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--text);
+}
+
+
+/* ─────────────────────────────────────
+   4. Video Placeholder
+   This is shown in the middle of the page
+   while your footage isn't added yet.
+   Replace this div with your A-Frame scene
+   or <video> element when you're ready.
+───────────────────────────────────── */
+.video-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: var(--surface);
+    color: var(--muted);
+    text-align: center;
+    padding: 3rem;
+}
+
+.video-placeholder-icon { font-size: 3.5rem; opacity: 0.3; }
+
+.video-placeholder h2 {
+    font-family: var(--font);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-2);
+}
+
+.video-placeholder p {
+    font-size: 0.84rem;
+    line-height: 1.65;
+    max-width: 320px;
+}
+
+.video-placeholder code {
+    font-size: 0.78rem;
+    background: var(--surface-2);
+    color: var(--accent);
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+
+/* ─────────────────────────────────────
+   5. Video Controls Bar
+   The bar with play, rewind, progress,
+   CC and fullscreen buttons
+───────────────────────────────────── */
+.video-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0 1.5rem;
+    height: 54px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* Left side — play + rewind */
+.controls-left,
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+/* Centre — progress bar + timestamp */
+.controls-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+/* All circular control buttons */
+.ctrl-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    transition: background var(--ease), border-color var(--ease), transform 0.15s;
+}
+.ctrl-btn:hover { border-color: var(--accent); background: var(--accent-glow); transform: scale(1.08); }
+
+/* When subtitles are turned on, the CC button glows */
+.ctrl-btn.subs-on { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+/* Play button is bigger and always filled accent */
+.ctrl-btn-play {
+    width: 40px; height: 40px;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+}
+.ctrl-btn-play:hover { background: var(--accent-dim); border-color: var(--accent-dim); color: var(--bg); }
+
+
+/* ─────────────────────────────────────
+   6. Progress Bar
+   The seekable bar in the centre of controls
+───────────────────────────────────── */
+.progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    min-width: 0;
+}
+
+/* The track (grey background line) */
+.progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--surface-3);
+    border-radius: 2px;
+    position: relative;
+    overflow: visible;
+    transition: height 0.15s;
+}
+/* Gets a bit taller when you hover over it */
+.progress-wrap:hover .progress-track { height: 6px; }
+
+/* The filled (played) portion */
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.25s linear;
+}
+
+/* The draggable circle handle — appears on hover */
+.progress-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+.progress-wrap:hover .progress-thumb { opacity: 1; }
+
+
+/* ─────────────────────────────────────
+   7. Timestamp + CC Label
+───────────────────────────────────── */
+.ctrl-timestamp {
+    font-family: var(--font);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+.ctrl-subtitle-label {
+    font-family: var(--font);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+
+/* ─────────────────────────────────────
+   8. Thumbnail Strip
+   Row of angle previews below the controls.
+   Scrolls horizontally if there are many thumbnails.
+───────────────────────────────────── */
+.thumbnail-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 1.5rem;
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
+}
+.thumbnail-strip::-webkit-scrollbar { height: 3px; }
+.thumbnail-strip::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 2px; }
+
+/* "ANGLES" label on the left */
+.strip-label {
+    font-family: var(--font);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-right: 0.6rem;
+    border-right: 1px solid var(--border);
+    margin-right: 0.2rem;
+}
+
+/* Each thumbnail box */
+.thumb {
+    flex-shrink: 0;
+    width: 96px; height: 58px;
+    border-radius: var(--radius-xs);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+    background: var(--surface-2);
+    transition: border-color 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+    transition: filter 0.2s, transform 0.25s;
+}
+.thumb:hover { border-color: rgba(212,255,71,0.4); transform: translateY(-2px); }
+.thumb:hover img { filter: brightness(1); transform: scale(1.05); }
+
+/* Placeholder icon shown before you add thumbnail images */
+.thumb-icon { font-size: 1.4rem; opacity: 0.3; }
+
+/* Label at the bottom of each thumbnail */
+.thumb-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 0.18rem 0.3rem;
+    background: rgba(7,8,12,0.8);
+    font-family: var(--font);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+}
+
+/* The currently selected thumbnail gets a green border */
+.thumb.active { border-color: var(--accent); }
+.thumb.active img { filter: brightness(1); }
+.thumb.active .thumb-label { background: var(--accent); color: var(--bg); }
+.thumb.active .thumb-icon { opacity: 0.6; }
+
+
+/* ─────────────────────────────────────
+   9. Subtitle Overlay
+   Floats above the video area.
+   Only visible when CC is toggled on.
+───────────────────────────────────── */
+.subtitle-overlay {
+    position: absolute;
+    bottom: 160px;
+    left: 50%; transform: translateX(-50%);
+    z-index: 50;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.subtitle-overlay.visible { opacity: 1; }
+
+.subtitle-text {
+    display: inline-block;
+    background: rgba(7,8,12,0.85);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    padding: 0.65rem 1.3rem;
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+
+/* ─────────────────────────────────────
+   10. Area Navigation Arrows
+   The ← → arrows overlaid on the video
+   for jumping between named areas
+───────────────────────────────────── */
+.area-nav {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    z-index: 40;
+}
+.area-nav.left  { left: 1rem; }
+.area-nav.right { right: 1rem; }
+
+.area-nav-btn {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: rgba(7,8,12,0.65);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(12px);
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.area-nav-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    transform: scale(1.1);
+}
+
+
+/* ─────────────────────────────────────
+   11. Footer Override for VR Pages
+   On VR pages the footer sits at the bottom
+   of the flex column rather than being fixed.
+   This makes it part of the page flow instead.
+───────────────────────────────────── */
+body.vr-page footer {
+    position: relative;
+    flex-shrink: 0;
+    height: 50px;
+    padding: 0 2.5rem;
+}
+
+
+/* ─────────────────────────────────────
+   12. Responsive
+───────────────────────────────────── */
+@media (max-width: 640px) {
+    .scene-topbar    { padding: 0 1rem; height: 46px; }
+    .video-controls  { height: 50px; gap: 0.35rem; padding: 0 0.8rem; }
+    .ctrl-subtitle-label { display: none; }
+    .ctrl-btn        { width: 32px; height: 32px; }
+    .ctrl-btn-play   { width: 36px; height: 36px; }
+    .thumbnail-strip { padding: 0.5rem 0.8rem; }
+    .thumb           { width: 70px; height: 44px; }
+    body.vr-page footer { padding: 0 1rem; }
+}
