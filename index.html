@@ -1,13 +1,247 @@
 <!DOCTYPE html>
-<html lang="">
+<html lang="en">
 <head>
-    <title>Group-6-VR-Project</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Group 6 - LSBU Virtual Experiences</title>
+    <meta name="description" content="Explore London South Bank University in immersive 360° VR. Four locations, any browser." />
+
+    <!-- Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Prevent theme flash -->
+    <script>
+        (function(){
+            var t = localStorage.getItem('vr-theme');
+            var d = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (t === 'light' || (!t && !d)) document.documentElement.setAttribute('data-theme','light');
+        })();
+    </script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/index.css" />
 </head>
 <body>
 
-<h1>My First Heading</h1>
-<p>My first paragraph.</p>
+<!-- ══════════════ HEADER ══════════════ -->
+<header>
+    <a href="index.html" class="logo">
+        <span class="logo-pip"></span>
+        LSBU&nbsp;VR&nbsp;Experience
+    </a>
+    <nav>
+        <a href="index.html" class="active">Home</a>
+        <a href="site1.html">LSBU Hub</a>
+        <a href="site2.html">LSBU Active</a>
+        <a href="site3.html">Keyworth</a>
+        <a href="site4.html">Borough Road</a>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">☀️</button>
+</header>
 
+
+<main>
+
+    <!-- ══════════════ HERO ══════════════ -->
+    <section class="hero">
+        <div class="hero-orb" aria-hidden="true"></div>
+
+        <p class="hero-eyebrow">London South Bank University &mdash; Group 6 VR Project</p>
+
+        <h1>
+            Explore LSBU<br>
+            in <span class="accent">Virtual<br>Reality</span>
+        </h1>
+
+        <p class="hero-sub">
+            Step inside four iconic LSBU locations through immersive 360&deg; VR
+            experiences built with A-Frame.
+        </p>
+
+        <div class="hero-actions">
+            <a href="site1.html" class="btn btn-primary">&#9654;&nbsp; Start Exploring</a>
+            <a href="#scenes" class="btn btn-ghost">View All Scenes</a>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat">
+                <span class="stat-num" data-count="4" data-suffix="">4</span>
+                <span class="stat-label">VR Scenes</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-num" data-count="360" data-suffix="°">360°</span>
+                <span class="stat-label">Immersive</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-num" data-count="1" data-suffix="">1</span>
+                <span class="stat-label">Campus</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-num" data-count="4" data-suffix="">4</span>
+                <span class="stat-label">Team Members</span>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ══════════════ SCENES GRID ══════════════ -->
+    <div class="section-head" id="scenes">
+        <h2>Choose a Scene</h2>
+        <a href="site1.html">Explore all &rarr;</a>
+    </div>
+
+    <div class="scenes-grid">
+
+        <!-- Card 1: LSBU Hub -->
+        <a href="site1.html" class="scene-card reveal">
+            <div class="card-img-wrap">
+                <!-- Replace src with your image once ready -->
+                <img src="assets/LSBU-Hub.jpg" alt="LSBU Hub" loading="lazy"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="card-placeholder" style="display:none">
+                    <span class="card-placeholder-icon">&#127916;</span>
+                    <span>LSBU Hub — Coming Soon</span>
+                </div>
+                <span class="card-badge">01 &mdash; Hub</span>
+                <span class="card-vr-pill">&#x1F453; VR</span>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">LSBU Hub</h2>
+                <p class="card-desc">The social heart of the campus. Explore communal spaces, cafes and student services in full 360&deg;.</p>
+                <div class="card-footer">
+                    <span class="card-cta">Enter scene &rarr;</span>
+                    <span class="card-location">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              Borough Road
+            </span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card 2: LSBU Active -->
+        <a href="site2.html" class="scene-card reveal">
+            <div class="card-img-wrap">
+                <img src="assets/LSBU-Active.jpg" alt="LSBU Active" loading="lazy"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="card-placeholder" style="display:none">
+                    <span class="card-placeholder-icon">&#127916;</span>
+                    <span>LSBU Active — Coming Soon</span>
+                </div>
+                <span class="card-badge">02 &mdash; Active</span>
+                <span class="card-vr-pill">&#x1F453; VR</span>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">LSBU Active</h2>
+                <p class="card-desc">Tour the sports and fitness facilities. From the gym floor to the sports hall — experience it all virtually.</p>
+                <div class="card-footer">
+                    <span class="card-cta">Enter scene &rarr;</span>
+                    <span class="card-location">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              Borough Road
+            </span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card 3: Keyworth Building -->
+        <a href="site3.html" class="scene-card reveal">
+            <div class="card-img-wrap">
+                <img src="assets/LSBU-Keyworth-Building.jpg" alt="Keyworth Building" loading="lazy"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="card-placeholder" style="display:none">
+                    <span class="card-placeholder-icon">&#127916;</span>
+                    <span>Keyworth Building — Coming Soon</span>
+                </div>
+                <span class="card-badge">03 &mdash; Keyworth</span>
+                <span class="card-vr-pill">&#x1F453; VR</span>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">Keyworth Building</h2>
+                <p class="card-desc">Walk through lecture halls and seminar rooms. An immersive look at LSBU's academic environment.</p>
+                <div class="card-footer">
+                    <span class="card-cta">Enter scene &rarr;</span>
+                    <span class="card-location">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              Keyworth Street
+            </span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Card 4: Borough Road Building -->
+        <a href="site4.html" class="scene-card reveal">
+            <div class="card-img-wrap">
+                <img src="assets/LSBU-Borough-Road-Building.jpg" alt="Borough Road Building" loading="lazy"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                <div class="card-placeholder" style="display:none">
+                    <span class="card-placeholder-icon">&#127916;</span>
+                    <span>Borough Road — Coming Soon</span>
+                </div>
+                <span class="card-badge">04 &mdash; Borough Road</span>
+                <span class="card-vr-pill">&#x1F453; VR</span>
+            </div>
+            <div class="card-body">
+                <h2 class="card-title">Borough Road Building</h2>
+                <p class="card-desc">Discover the historic architectural centrepiece of the LSBU campus, up close and in full detail.</p>
+                <div class="card-footer">
+                    <span class="card-cta">Enter scene &rarr;</span>
+                    <span class="card-location">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              Borough Road
+            </span>
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+
+    <!-- ══════════════ FEATURES ══════════════ -->
+    <div class="section-head">
+        <h2>Key Features</h2>
+    </div>
+
+    <div class="features-section">
+        <div class="features-row">
+            <div class="feature-card reveal">
+                <div class="feature-icon">&#x1F30D;</div>
+                <div class="feature-title">360&deg; Immersive</div>
+                <p class="feature-desc">Full equirectangular 360&deg; scenes. Look in any direction on desktop, mobile or a VR headset.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">&#x1F4F1;</div>
+                <div class="feature-title">Any Device</div>
+                <p class="feature-desc">Works in Chrome, Firefox and Safari. No app or plugin required to start exploring.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">&#x1F3DB;&#xFE0F;</div>
+                <div class="feature-title">Real LSBU Locations</div>
+                <p class="feature-desc">All four scenes are real LSBU buildings filmed on location — authentic, not synthetic renders.</p>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+    <span class="footer-left">Group 6 &middot; LSBU &middot; 2026</span>
+    <div class="footer-center">
+        <a href="site1.html">Hub</a>
+        <a href="site2.html">Active</a>
+        <a href="site3.html">Keyworth</a>
+        <a href="site4.html">Borough Road</a>
+    </div>
+    <span class="footer-right">&copy; 2026 &mdash; <a href="LICENSE.txt">MIT License</a></span>
+</footer>
+
+<script src="js/theme.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
-
