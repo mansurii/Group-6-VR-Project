@@ -1,8 +1,10 @@
 # **AR-VR-Group-6**
 
-## Project Documentation
+## Project Overview
 
-**Project Directory & Folder Structure:**
+This project showcases a collection of virtual reality (VR) experiences built using A-Frame. The VR scenes are based on the real-world locations at London South Bank University (LSBU). The experiences are hosted on a local server for testing and demonstration purposes.
+
+## 📁 **Project Directory & Folder Structure:**
 - **`index.html`**: Main point of the website. The landing page that links to all other VR experiences.
 - **`site1.html`**: LSBU Hub. VR scene for LSBU Hub.
 - **`site2.html`**: LSBU Active. VR scene for LSBU Active.
@@ -20,4 +22,4 @@
     - **`aframe.min.js`**: A-Frame library stored locally.
 - **`requirements.txt`**: If using any backend or other dependencies (for Python, etc.).
 - **`LICENSE.txt`**: Project License.
-- **`README.md`**: Project documentation redirecting to [ProjectDocumentation.md](./ProjectDocumentation.md).
+- **`README.md`**: Project documentation.
