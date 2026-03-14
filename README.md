@@ -20,8 +20,11 @@ This project showcases a collection of virtual reality (VR) experiences built us
 - **`server.py`**: Python server running on port 5000 to serve the website locally.
 
 ### **Folder Structure::**
-- **`/assets/`**: Folder for all media (images, models, audio, etc.).
-- **`.gitkeep`**: Ensures the folder is tracked by Git even though it's empty for now.
+**`/assets/`**: Folder for all media files (images, models, audio, etc.).
+- **`LSBU-Active.jpg`**: Image specific to LSBU Active.
+- **`LSBU-Borough-Road-Building.jpg`**: Image specific to Borough Road Building.
+- **`LSBU-Hub.jpg`**: Image specific to LSBU Hub.
+- **`LSBU-Keyworth-Building.jpg`**: Image specific to Keyworth Building.
 
 #### **`/css/`**: Folder for CSS files.
 - **`styles.css`**: Global styles for the entire website.
@@ -34,7 +37,7 @@ This project showcases a collection of virtual reality (VR) experiences built us
 - **`/js/`**: Folder for JavaScript files.
     - **`.gitkeep`**: Ensures the folder is tracked by Git even though it's empty for now.
 
-#### **`/lib/`**: External libraries (optional).
+#### **`/lib/`**: External libraries files.
 - **`/lib/`**: External libraries (optional).
     - **`aframe.min.js`**: A-Frame library stored locally.
 
