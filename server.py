@@ -1,13 +1,14 @@
-import http.server
-import socketserver
+import http.server, ssl, socketserver
 
-# The port where the server will run
-PORT = 5000
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
-# Set up the handler to serve the files
-Handler = http.server.SimpleHTTPRequestHandler
+context.load_cert_chain("certs/cert.pem")
+port=5000
+server_address = ("0.0.0.0", port)
 
-# Start the server
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print(f"Server is running at http://localhost:{PORT}")
-    httpd.serve_forever()  # Keep the server running
+handler = http.server.SimpleHTTPRequestHandler
+
+with socketserver.TCPServer(server_address, handler) as httpd:
+    httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+    print("Server listening on https://localhost:5000")
+    httpd.serve_forever()
