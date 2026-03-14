@@ -4,6 +4,11 @@
 
 This project showcases a collection of virtual reality (VR) experiences built using A-Frame. The VR scenes are based on the real-world locations at London South Bank University (LSBU). The experiences are hosted on a local server for testing and demonstration purposes.
 
+### Key Features:
+- Interactive VR scenes for different buildings of LSBU.
+- Simple and user-friendly interface to navigate between scenes.
+- Hosted locally using a Python server.
+
 ## 📁 **Project Directory & Folder Structure:**
 - **`index.html`**: Main point of the website. The landing page that links to all other VR experiences.
 - **`site1.html`**: LSBU Hub. VR scene for LSBU Hub.
