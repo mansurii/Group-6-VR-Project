@@ -9,7 +9,7 @@ This project showcases a collection of virtual reality (VR) experiences built us
 - Simple and user-friendly interface to navigate between scenes.
 - Hosted locally using a Python server.
 
-## 📁 **Project Directory & Folder Structure:**
+## 📁 **Project Directory**
 
 ### **Files:**
 - **`index.html`**: Main point of the website. The landing page that links to all other VR experiences.
@@ -19,7 +19,7 @@ This project showcases a collection of virtual reality (VR) experiences built us
 - **`site4.html`**: Borough Road Building. VR scene for the Borough Road Building.
 - **`server.py`**: Python server running on port 5000 to serve the website locally.
 
-### **Folders:**
+### **Folder Structure::**
 - **`/assets/`**: Folder for all media (images, models, audio, etc.).
 - **`.gitkeep`**: Ensures the folder is tracked by Git even though it's empty for now.
 
