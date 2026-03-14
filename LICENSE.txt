@@ -1,40 +1,13 @@
-Creative Commons Attribution 4.0 International License (CC BY 4.0)
+MIT License
 
-Copyright (c) 2026 AR-VR-Group-6
+Copyright (c) 2026  VR- Group 6
 
-This work is licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0). You are free to:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”),
+to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-- Share: Copy and redistribute the material in any way you like, whether that's online or offline, and in any format.
-- Adapt: Remix, transform, or build upon this work for any purpose, even commercially.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-But there’s one condition:
-
-1. Give Credit: You need to give appropriate credit to the original author(s), provide a link to the license, and indicate if you made any changes. You can do this however you like, but you cannot suggest that the author(s) endorse you or your use of the material.
-
-2. No Extra Restrictions: You can’t use legal terms or technology that restrict others from doing what this license allows them to do.
-
-Things You Can’t Do:
-
-- Don’t use the material for anything unlawful or illegal.
-- Don’t mislead people into thinking the original authors endorse you or your use of the project.
-
-No Warranty:
-
-This software is provided *as is*. The authors do not provide any warranties or guarantees about it. If something goes wrong when you use this software, we are not responsible for any damage or loss.
-
----
-
-Your Rights & Responsibilities:
-
-By using this project, you acknowledge that you understand and agree to the terms in this license. You also agree that:
-
-- All rights related to the project remain with the original author(s). The work stays the intellectual property of the author(s).
-- You must always give proper credit when you use, share, or adapt the work in any way.
-
----
-
-Disclaimer:
-
-This software is provided "as is," without any guarantees or warranties, either express or implied, including but not limited to warranties of merchantability or fitness for a particular purpose. In no case will the author(s) be liable for any damages, claims, or other issues arising from using the software.
-
-For more details about this license, please visit: https://creativecommons.org/licenses/by/4.0/
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
