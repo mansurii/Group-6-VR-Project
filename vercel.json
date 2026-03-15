@@ -2,11 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.py",
-      "use": "@vercel/python",
-      "config": {
-        "pythonVersion": "3.10"
-      }
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
     }
   ]
 }
