@@ -1,0 +1,5 @@
+# Python standard libraries
+# No need for additional dependencies
+
+# Optionally specify the Python version
+python==3.10.*
