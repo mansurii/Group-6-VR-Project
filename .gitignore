@@ -16,7 +16,7 @@ Thumbs.db
 
 # Default ignored files
 /shelf/
-/workspace.xml
+.workspace.xml
 
 # Editor-based HTTP Client requests
 /httpRequests/
@@ -44,3 +44,7 @@ node_modules/
 
 # Ignore Vercel project-specific files
 .vercel/
+
+# Un-ignore the css/ and js/ directories
+!css/
+!js/
