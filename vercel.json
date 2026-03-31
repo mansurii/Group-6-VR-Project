@@ -1,16 +1,22 @@
 {
   "builds": [
-    { "src": "app.py", "use": "@vercel/python" },
-    { "src": "assets/**", "use": "@vercel/static" },
-    { "src": "css/**", "use": "@vercel/static" },
-    { "src": "js/**", "use": "@vercel/static" },
-    { "src": "lib/**", "use": "@vercel/static" }
+    { "src": "app.py",                "use": "@vercel/python" },
+    { "src": "css/**",                "use": "@vercel/static" },
+    { "src": "js/**",                 "use": "@vercel/static" },
+    { "src": "lib/**",                "use": "@vercel/static" },
+    { "src": "assets/images/**",      "use": "@vercel/static" },
+    { "src": "assets/video/**",       "use": "@vercel/static" },
+    { "src": "assets/anims/**",       "use": "@vercel/static" },
+    { "src": "assets/audio/**",       "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/css/(.*)", "dest": "/css/$1" },
-    { "src": "/js/(.*)", "dest": "/js/$1" },
-    { "src": "/lib/(.*)", "dest": "/lib/$1" },
-    { "src": "/(.*)", "dest": "app.py" }
+    { "src": "/css/(.*)",             "dest": "/css/$1"             },
+    { "src": "/js/(.*)",              "dest": "/js/$1"              },
+    { "src": "/lib/(.*)",             "dest": "/lib/$1"             },
+    { "src": "/assets/images/(.*)",   "dest": "/assets/images/$1"   },
+    { "src": "/assets/video/(.*)",    "dest": "/assets/video/$1"    },
+    { "src": "/assets/anims/(.*)",    "dest": "/assets/anims/$1"    },
+    { "src": "/assets/audio/(.*)",    "dest": "/assets/audio/$1"    },
+    { "src": "/(.*)",                 "dest": "app.py"              }
   ]
 }
