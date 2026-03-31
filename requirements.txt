@@ -1,1 +1,3 @@
+# Python dependencies
+# Install locally with: pip install -r requirements.txt
 flask
