@@ -1,6 +1,27 @@
 /*
   index.css
   Styles for the landing page (index.html) only.
+  This is the ONLY CSS file the project needs now —
+  LsbuTour.html handles its own look entirely through A-Frame.
+
+  Contents:
+    1.  Font import
+    2.  CSS reset
+    3.  Colour variables — dark and light mode
+    4.  Base body and HTML
+    5.  Fixed header
+    6.  Logo and animated dot
+    7.  Nav links
+    8.  Theme toggle button
+    9.  Fixed footer
+    10. Hero section
+    11. Stats row
+    12. Section heading
+    13. Scene cards grid
+    14. Features row
+    15. Reusable bits — tag badge, buttons
+    16. Animations
+    17. Responsive
 */
 
 
