@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="lib/aframe.js"></script>
+  <script src="https://unpkg.com/aframe-event-set-component@5.x.x/dist/aframe-event-set-component.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+
+  <script>
+    AFRAME.registerComponent('billboard', {
+      tick() {
+        const cam = document.querySelector('[camera]');
+        if (!cam) return;
+        this.el.object3D.lookAt(cam.object3D.getWorldPosition(new THREE.Vector3()));
+      }
+    });
+
+    AFRAME.registerComponent('follow-rig', {
+      schema: { offset: { type: 'vec3', default: { x: 0, y: 1.5, z: -2.5 } }, lerp: { type: 'number', default: 0.07 } },
+      init() { this._target = new THREE.Vector3(); this._camQuat = new THREE.Quaternion(); },
+      tick() {
+        const rig = document.querySelector('#rig');
+        const cam = document.querySelector('[camera]');
+        if (!rig || !cam) return;
+        cam.object3D.getWorldQuaternion(this._camQuat);
+        const euler = new THREE.Euler().setFromQuaternion(this._camQuat, 'YXZ');
+        const yawQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, euler.y, 0));
+        const offset = new THREE.Vector3(this.data.offset.x, this.data.offset.y, this.data.offset.z).applyQuaternion(yawQuat);
+        const rigPos = rig.object3D.position;
+        this._target.set(rigPos.x + offset.x, offset.y, rigPos.z + offset.z);
+        this.el.object3D.position.lerp(this._target, this.data.lerp);
+        const camWorldPos = new THREE.Vector3();
+        cam.object3D.getWorldPosition(camWorldPos);
+        this.el.object3D.lookAt(camWorldPos);
+      }
+    });
+
+    AFRAME.registerComponent('fade-overlay', {
+      init() {
+        this._opacity = 0; this._target = 0; this._speed = 0; this._onDone = null; this._mat = null;
+        this.el.object3D.visible = false;
+        this.el.addEventListener('object3dset', () => this._grabMat());
+        this.el.sceneEl.addEventListener('loaded', () => this._grabMat());
+      },
+      _grabMat() {
+        const mesh = this.el.getObject3D('mesh');
+        if (!mesh) return;
+        mesh.traverse(n => {
+          if (n.isMesh && !this._mat) {
+            this._mat = n.material;
+            this._mat.transparent = true; this._mat.depthWrite = false; this._mat.opacity = 0; this._mat.needsUpdate = true;
+          }
+        });
+        this.el.object3D.visible = false;
+      },
+      fade(from, to, durationMs, onDone) {
+        if (!this._mat) this._grabMat();
+        if (!this._mat) { setTimeout(() => this.fade(from, to, durationMs, onDone), 100); return; }
+        this._mat.transparent = true; this._mat.depthWrite = false; this._mat.opacity = from; this._mat.needsUpdate = true;
+        this._opacity = from; this._target = to;
+        this._speed = Math.abs(to - from) / (durationMs / 1000);
+        this._onDone = onDone || null;
+        this.el.object3D.visible = true;
+      },
+      tick(t, delta) {
+        if (!this._mat || this._opacity === this._target) return;
+        const step = this._speed * (delta / 1000);
+        this._opacity = this._target > this._opacity ? Math.min(this._opacity + step, this._target) : Math.max(this._opacity - step, this._target);
+        this._mat.opacity = this._opacity;
+        if (this._opacity === this._target) {
+          if (this._target === 0) { this.el.object3D.visible = false; this._mat.opacity = 0; }
+          if (this._onDone) { const cb = this._onDone; this._onDone = null; cb(); }
+        }
+      }
+    });
+
+    AFRAME.registerComponent('annotation-fade', {
+      schema: {
+        duration:   { type: 'number', default: 400 },
+        hoverFrom:  { type: 'number', default: -0.08 },
+        hoverTo:    { type: 'number', default:  0.08 },
+        hoverSpeed: { type: 'number', default:  1.5  },
+      },
+      init() {
+        this._opacity = 0; this._target = 0; this._speed = 0; this._onDone = null;
+        this._mats = []; this._hover = false; this._hoverT = 0; this._baseY = null;
+        this.el.object3D.visible = false;
+      },
+      _grabMats() {
+        this._mats = [];
+        this.el.object3D.traverse(n => {
+          if (n.isMesh && n.material) {
+            const mats = Array.isArray(n.material) ? n.material : [n.material];
+            mats.forEach(m => { m.transparent = true; m.depthWrite = false; if (!m.map) m.opacity = 0; this._mats.push(m); });
+          }
+        });
+      },
+      fade(from, to, onDone) {
+        if (this._mats.length === 0) this._grabMats();
+        if (this._mats.length === 0) {
+          this.el.addEventListener('object3dset', () => { this._grabMats(); this.fade(from, to, onDone); }, { once: true });
+          return;
+        }
+        this._mats.forEach(m => { m.transparent = true; m.depthWrite = false; m.opacity = from; m.needsUpdate = true; });
+        this._opacity = from; this._target = to;
+        this._speed = Math.abs(to - from) / (this.data.duration / 1000);
+        this._onDone = onDone || null;
+        this.el.object3D.visible = true;
+        this._hover = this.el._annHover || false;
+      },
+      tick(t, delta) {
+        if (this._hover && this.el.object3D.visible) {
+          if (this._baseY === null) this._baseY = this.el.object3D.position.y;
+          this._hoverT += delta * 0.001;
+          const mid = (this.data.hoverTo + this.data.hoverFrom) / 2;
+          const range = (this.data.hoverTo - this.data.hoverFrom) / 2;
+          const offset = mid + Math.sin(this._hoverT * this.data.hoverSpeed * Math.PI * 2) * range;
+          this.el.object3D.position.y = this._baseY + offset;
+        }
+        if (this._mats.length === 0 || this._opacity === this._target) return;
+        const step = this._speed * (delta / 1000);
+        this._opacity = this._target > this._opacity ? Math.min(this._opacity + step, this._target) : Math.max(this._opacity - step, this._target);
+        this._mats.forEach(m => { m.opacity = this._opacity; });
+        if (this._opacity === this._target) {
+          if (this._target === 0) this.el.object3D.visible = false;
+          if (this._onDone) { const cb = this._onDone; this._onDone = null; cb(); }
+        }
+      }
+    });
+
+    AFRAME.registerComponent('quest-controls', {
+      init() {
+        this.prevButtons = {};
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('enter-vr', () => {
+          const cursor = document.querySelector('#cursor');
+          if (cursor) { cursor.setAttribute('visible', 'false'); cursor.setAttribute('raycaster', 'objects: none'); }
+          const xrSession = scene.renderer.xr.getSession();
+          if (!xrSession) return;
+          const pollXR = () => {
+            for (const source of xrSession.inputSources) {
+              if (!source.gamepad || source.handedness !== 'right') continue;
+              source.gamepad.buttons.forEach((btn, idx) => {
+                const key = `right_${idx}`;
+                const wasPressed = this.prevButtons[key] || false;
+                const isPressed = btn.pressed || btn.value > 0.5;
+                if (isPressed && !wasPressed) {
+                  if (idx === 5) document.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyQ', bubbles: true }));
+                  if (idx === 0) { const rc = document.querySelector('#right-controller')?.components?.raycaster; if (rc && rc.intersectedEls.length > 0) rc.intersectedEls[0].emit('click'); }
+                }
+                this.prevButtons[key] = isPressed;
+              });
+            }
+            xrSession.requestAnimationFrame(pollXR);
+          };
+          xrSession.requestAnimationFrame(pollXR);
+          xrSession.addEventListener('selectstart', (e) => {
+            if (e.inputSource.handedness !== 'right') return;
+            const rc = document.querySelector('#right-controller')?.components?.raycaster;
+            if (rc && rc.intersectedEls.length > 0) rc.intersectedEls[0].emit('click');
+          });
+        });
+        scene.addEventListener('exit-vr', () => {
+          const cursor = document.querySelector('#cursor');
+          if (cursor) { cursor.setAttribute('visible', 'true'); cursor.setAttribute('raycaster', 'objects: .frame-btn, .world-btn, .robot-btn'); }
+        });
+      }
+    });
+
+    AFRAME.registerComponent('position-picker', {
+      init() {
+        this._active = false;
+        this._raycaster = new THREE.Raycaster();
+        const scene = document.querySelector('a-scene');
+        document.addEventListener('keydown', (e) => { if (e.code === 'KeyP' && !e.repeat) this._toggle(); });
+        scene.addEventListener('click', (e) => {
+          if (!this._active) return;
+          const cursor = document.querySelector('#cursor');
+          if (cursor) { const rc = cursor.components.raycaster; if (rc && rc.intersectedEls.length > 0) return; }
+          this._fireFromCamera();
+        });
+        scene.addEventListener('enter-vr', () => {
+          const xrSession = scene.renderer.xr.getSession();
+          if (!xrSession) return;
+          const pollPicker = () => {
+            for (const source of xrSession.inputSources) {
+              if (!source.gamepad || source.handedness !== 'right') continue;
+              const yBtn = source.gamepad.buttons[4];
+              const isY = yBtn && (yBtn.pressed || yBtn.value > 0.5);
+              if (isY && !this._prevY) this._toggle();
+              this._prevY = isY;
+              const tBtn = source.gamepad.buttons[0];
+              const isT = tBtn && (tBtn.pressed || tBtn.value > 0.5);
+              if (isT && !this._prevT && this._active) this._fireFromController();
+              this._prevT = isT;
+            }
+            xrSession.requestAnimationFrame(pollPicker);
+          };
+          xrSession.requestAnimationFrame(pollPicker);
+        });
+      },
+      _toggle() {
+        this._active = !this._active;
+        const panel = document.querySelector('#pos-picker-panel');
+        const title = document.querySelector('#pos-picker-title');
+        if (panel) panel.setAttribute('visible', this._active);
+        if (title) title.setAttribute('value', this._active ? '📍 POSITION PICKER — ON' : '📍 POSITION PICKER — OFF');
+      },
+      _fireFromCamera() {
+        const cam = document.querySelector('[camera]');
+        if (!cam) return;
+        const worldPos = new THREE.Vector3();
+        const worldDir = new THREE.Vector3();
+        cam.object3D.getWorldPosition(worldPos);
+        cam.object3D.getWorldDirection(worldDir);
+        this._castAndReport(worldPos, worldDir);
+      },
+      _fireFromController() {
+        const ctrl = document.querySelector('#right-controller');
+        if (!ctrl) { this._fireFromCamera(); return; }
+        const worldPos = new THREE.Vector3();
+        const worldDir = new THREE.Vector3(0, 0, -1);
+        ctrl.object3D.getWorldPosition(worldPos);
+        worldDir.applyQuaternion(ctrl.object3D.getWorldQuaternion(new THREE.Quaternion()));
+        this._castAndReport(worldPos, worldDir);
+      },
+      _castAndReport(origin, direction) {
+        const annRoot = document.querySelector('#annotation-root');
+        if (annRoot) {
+          this._raycaster.set(origin, direction.normalize());
+          const objects = [];
+          annRoot.object3D.traverse(n => { if (n.isMesh) objects.push(n); });
+          if (objects.length > 0) {
+            const hits = this._raycaster.intersectObjects(objects, true);
+            if (hits.length > 0) { this._report(hits[0].point); return; }
+          }
+        }
+        const rig = document.querySelector('#rig');
+        const playerPos = rig ? rig.object3D.position.clone() : origin.clone();
+        const PICK_DISTANCE = 3.5;
+        const flatDir = direction.clone();
+        flatDir.y = 0;
+        if (flatDir.length() < 0.001) flatDir.set(0, 0, -1);
+        flatDir.normalize();
+        this._report(new THREE.Vector3(playerPos.x + flatDir.x * PICK_DISTANCE, 1.5, playerPos.z + flatDir.z * PICK_DISTANCE));
+      },
+      _report(point) {
+        const x = point.x.toFixed(2), y = point.y.toFixed(2), z = point.z.toFixed(2);
+        const posStr = `x:${x}  y:${y}  z:${z}`;
+        const copyStr = `{ x: ${x}, y: ${y}, z: ${z} }`;
+        const txt = document.querySelector('#pos-picker-text');
+        const copy = document.querySelector('#pos-picker-copy');
+        if (txt) txt.setAttribute('value', posStr);
+        if (copy) copy.setAttribute('value', `Copy: ${copyStr}`);
+        let overlay = document.querySelector('#pos-overlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'pos-overlay';
+          overlay.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,17,34,0.95);color:#86E072;font-family:monospace;font-size:16px;padding:12px 24px;border-radius:8px;border:1px solid #4CC3D9;z-index:9999;text-align:center;pointer-events:none;`;
+          document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `<span style="color:#4CC3D9">📍 Position picked:</span><br><b style="color:#fff">${posStr}</b><br><span style="color:#aaa;font-size:13px">Copy → ${copyStr}</span>`;
+        console.log('Position picked:', copyStr);
+        if (copy) { copy.setAttribute('color', '#ffff00'); setTimeout(() => copy?.setAttribute('color', '#86E072'), 600); }
+      }
+    });
+  </script>
+</head>
+
+<body>
+<a-scene position-picker>
+  <a-assets>
+    <video id="bg-vid1" src="assets/video/Location1_AR_VR.mp4" autoplay loop muted crossorigin="anonymous"></video>
+    <img id="Pause"         src="assets/images/Pause.png">
+    <img id="Play"          src="assets/images/Play.png">
+    <img id="thumb0"        src="assets/images/l1.jpeg">
+    <img id="thumb1"        src="assets/images/l2.jpeg">
+    <img id="thumb2"        src="assets/images/l3.jpeg">
+    <img id="thumb3"        src="assets/images/l4.jpeg">
+    <img id="thumb4"        src="assets/images/l5.jpeg">
+    <img id="thumb-robot"   src="assets/images/thumb_robot.jpeg">
+    <img id="StudentCentre" src="assets/anims/Logo.png">
+    <img id="Venue"         src="assets/anims/The Venue.png">
+    <img id="Arrow"         src="assets/anims/Arrow.png">
+    <img id="Cafeteria"     src="assets/anims/Cafeteria.png">
+    <img id="Artblock"      src="assets/anims/artblock.png">
+    <img id="StudentKitchen" src="assets/anims/SK.png">
+    <img id="active"        src="assets/anims/active.png">
+    <img id="Outside"       src="assets/anims/Outside.png">
+    <img id="Tesco"         src="assets/anims/Tesco.png">
+    <img id="Borough"       src="assets/anims/Borough.png">
+    <img id="Perry"         src="assets/anims/Perry building.png">
+    <img id="Cafe"          src="assets/anims/cafe.png">
+    <img id="Shd"           src="assets/anims/Sdh.png">
+    <img id="sport"         src="assets/anims/Sports.png">
+    <img id="Hub"           src="assets/anims/hub.png">
+    <img id="circle"        src="assets/anims/Circle.png">
+    <img id="Courtyard"     src="assets/anims/Courtyard.png">
+  </a-assets>
+
+  <a-videosphere id="videosphere" src="#bg-vid1" radius="5000"></a-videosphere>
+  <a-sphere id="flash-overlay"  fade-overlay radius="50" material="color: #ffffff; transparent: true; opacity: 0; side: back; depthWrite: false"></a-sphere>
+  <a-sphere id="glitch-overlay" fade-overlay radius="50" material="color: #000000; transparent: true; opacity: 0; side: back; depthWrite: false"></a-sphere>
+
+  <a-entity id="right-controller" laser-controls="hand: right" quest-controls raycaster="objects: .frame-btn, .world-btn, .robot-btn; far: 20; showLine: true" line="color: #86E072; opacity: 1"></a-entity>
+
+  <a-entity id="annotation-root"></a-entity>
+  <a-entity id="frames-root"></a-entity>
+
+  <a-entity id="robot-wrap" visible="false" billboard>
+    <a-torus id="robot-border" radius="0.58" radius-tubular="0.025" color="#FFD700" position="0 0 0.01" segments-tubular="24"></a-torus>
+    <a-plane width="1.4" height="1.0" color="#1a1000" opacity="0.95" position="0 0 -0.03"></a-plane>
+    <a-plane class="robot-btn" id="robot-frame" width="1.2" height="0.8" material="src: #thumb-robot; transparent: false; color: #221100"></a-plane>
+    <a-text value="◈ ROBOT VIDEO ◈" align="center" position="0 0.60 0" width="2.8" color="#FFD700"></a-text>
+    <a-text value="Special Feature"  align="center" position="0 -0.57 0" width="2.2" color="#aa8800"></a-text>
+  </a-entity>
+
+  <a-entity id="playpause-follow" follow-rig="offset: 2.2 1.3 -2.0; lerp: 0.07" visible="false">
+    <a-plane color="#111111" opacity="0.80" position="0 0 -0.01" width="1.3" height="0.75" material="transparent: true"></a-plane>
+    <a-text value="VIDEO" align="center" position="0 0.28 0" width="1.8" color="#4CC3D9"></a-text>
+    <a-plane class="world-btn" id="PlayVid" material="src: #Play; transparent: true"  position="-0.32 -0.02 0" width="0.45" height="0.45"></a-plane>
+    <a-plane class="world-btn" id="StopVid" material="src: #Pause; transparent: true" position=" 0.32 -0.02 0" width="0.45" height="0.45"></a-plane>
+    <a-text value="Play"  align="center" position="-0.32 -0.30 0" width="1.4" color="#aaaaaa"></a-text>
+    <a-text value="Pause" align="center" position=" 0.32 -0.30 0" width="1.4" color="#aaaaaa"></a-text>
+  </a-entity>
+
+  <a-entity id="caption-follow" follow-rig="offset: 0 0.65 -2.15; lerp: 0.09" visible="false">
+    <a-plane id="caption-bg"   color="#000000" opacity="0" width="3.0" height="0.52" position="0 0 -0.01" material="transparent: true"></a-plane>
+    <a-text  id="caption-text" value="" align="center" wrap-count="34" color="#ffffff" opacity="0" width="2.7" position="0 0 0"></a-text>
+  </a-entity>
+
+  <a-entity id="pos-picker-panel" follow-rig="offset: 0 0.2 -2; lerp: 0.15" visible="false">
+    <a-plane color="#001122" opacity="0.92" width="2.8" height="0.9" position="0 0 -0.01" material="transparent: true"></a-plane>
+    <a-text id="pos-picker-title" value="📍 POSITION PICKER — ON" align="center" position="0 0.32 0" width="3"   color="#4CC3D9"></a-text>
+    <a-text id="pos-picker-text"  value="Point anywhere and click to get position" align="center" position="0 0.05 0" width="2.6" color="#ffffff" wrap-count="36"></a-text>
+    <a-text id="pos-picker-copy"  value="" align="center" position="0 -0.28 0" width="2.6" color="#86E072" wrap-count="40"></a-text>
+  </a-entity>
+
+  <a-entity id="rig" position="0 0 0">
+    <a-camera look-controls="pointerLockEnabled: true; reverseMouseDrag: false; magicWindowTrackingEnabled: false" wasd-controls="enabled: false">
+      <a-cursor id="cursor" color="#86E072" raycaster="objects: .frame-btn, .world-btn, .robot-btn"></a-cursor>
+    </a-camera>
+  </a-entity>
+</a-scene>
+
+<script>
+  const SCENES = [
+    {
+      src: 'assets/video/Location1_AR_VR.mp4', label: 'Student Centre', thumb: '#thumb0', vo: 'assets/audio/location1.m4a',
+      captions: [
+        { text: 'Student Centre', time: 0 },
+        { text: 'Welcome to the first floor of the Student Centre', time: 2 },
+        { text: 'From here you can head straight through to the bar area', time: 5 },
+        { text: 'Also known as The Venue', time: 8 },
+        { text: 'Which is a popular spot for students to relax and socialise', time: 10 },
+        { text: 'If you take the stairs, upstairs youll find a Cafeteria', time: 14 },
+        { text: 'where students can grab food and take a break between classes', time: 17 }
+      ],
+      annotations: [
+        { primitive: 'plane', image: '#StudentCentre', position: { x: -3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 2, hideAt: 7, fadeMs: 500, label: '', hover: false, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Venue', position: { x: 3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: -90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 8, hideAt: 14, fadeMs: 400, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .2 },
+        { primitive: 'plane', image: '#Arrow', position: { x: 3.5, y: 0, z: -0.2 }, rotation: { x: -90, y: -90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 8, hideAt: 14, fadeMs: 400, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: 1.0 },
+        { primitive: 'plane', image: '#Arrow', position: { x: -3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 1, y: 1, z: 1 }, showAt: 14, hideAt: 17, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .5 }
+      ]
+    },
+    {
+      src: 'assets/video/Location2_AR_VR.mp4', label: 'Cafeteria', thumb: '#thumb1', vo: 'assets/audio/location2.m4a',
+      captions: [
+        { text: 'Cafeteria', time: 0 },
+        { text: 'Welcome to the Cafeteria area', time: 3 },
+        { text: 'Here students can buy food and relax in seating booths', time: 5 },
+        { text: 'Many which include TVs where you can connect your own devices', time: 9 },
+        { text: 'The Cafeteria also links directly to the student kitchen', time: 14 },
+        { text: 'So you could warm up your food', time: 17 },
+        { text: 'and provides access to the art block and faraday wing', time: 19.5 },
+        { text: 'If they need to attend some classes', time: 22 }
+      ],
+      annotations: [
+        { primitive: 'plane', image: '#Cafeteria', position: { x: -3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 2, hideAt: 7, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Arrow', position: { x: -3.5, y: 0, z: -0.2 }, rotation: { x: 0, y: -90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 5, hideAt: 10, fadeMs: 400, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .2 },
+        { primitive: 'plane', image: '#Arrow', position: { x: -3.5, y: 0, z: -0.2 }, rotation: { x: 0, y: -90, z: -90 }, scale: { x: 2, y: 2, z: 2 }, showAt: 10, hideAt: 17, fadeMs: 400, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .2 },
+        { primitive: 'plane', image: '#StudentKitchen', position: { x: -3.5, y: 3, z: 5 }, rotation: { x: 0, y: 180, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 12, hideAt: 20, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Artblock', position: { x: -5.5, y: 3, z: 3 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 19.5, hideAt: 24, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Arrow', position: { x: -3.5, y: 0, z: 1 }, rotation: { x: -90, y: 0, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 12, hideAt: 17, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .5 }
+      ]
+    },
+    {
+      src: 'assets/video/Location3_AR_VR.mp4', label: 'Outside Student Centre', thumb: '#thumb2', vo: 'assets/audio/location3.m4a',
+      captions: [
+        { text: 'This area is just outside the Student Centre', time: 0 },
+        { text: 'Directly opposite is Tescos for quick shopping', time: 3 },
+        { text: 'If you walk to the left, youll reach Student (lsbu) hub', time: 7 },
+        { text: 'Which includes the library and another cafeteria', time: 11 },
+        { text: 'Along with Lsbu Active and the Sports hall', time: 13.6 },
+        { text: 'Nearby is Borough Road building home to faith spaces', time: 18 },
+        { text: 'While heading right and taking another right leads towards Perry Building', time: 22 }
+      ],
+      annotations: [
+        { primitive: 'plane', image: '#Outside', position: { x: 3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: -90, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 2, hideAt: 7, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Tesco', position: { x: 4.5, y: 3, z: 10 }, rotation: { x: 0, y: -110, z: 0 }, scale: { x: 3, y: 2, z: 3 }, showAt: 3, hideAt: 7, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Arrow', position: { x: 3.5, y: 0, z: -0.2 }, rotation: { x: -90, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 }, showAt: 7, hideAt: 11, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Arrow', position: { x: 3.5, y: 0, z: -0.2 }, rotation: { x: -90, y: 195, z: 0 }, scale: { x: 1, y: 1, z: 1 }, showAt: 3, hideAt: 7, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0.05, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#active', position: { x: 3.5, y: 3, z: -3 }, rotation: { x: 0, y: -90, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 7, hideAt: 17, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Borough', position: { x: 0.5, y: 3, z: -10 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 18, hideAt: 21, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Perry', position: { x: -3.5, y: 3, z: 7 }, rotation: { x: 0, y: 180, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 20, hideAt: 24, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 }
+      ]
+    },
+    {
+      src: 'assets/video/Location4_AR_VR.mp4', label: 'Lsbu Hub', thumb: '#thumb3', vo: 'assets/audio/location4.m4a',
+      captions: [
+        { text: 'Lsbu Hub', time: 0 },
+        { text: 'This is Lsbu Hub', time: 2 },
+        { text: 'Just ahead is the pathway leading towards Student Help Desk', time: 4 },
+        { text: 'With a coffee shop near by for students to grab a drink or a few snacks', time: 8 },
+        { text: 'Downstairs leads to the Cafeteria', time: 14 },
+        { text: 'While upstairs takes you the library and study rooms', time: 16.5 },
+        { text: 'From this floor, students can also head over to the sports hall', time: 20 },
+        { text: 'To watch a few games such as Basketball or Football', time: 23.5 }
+      ],
+      annotations: [
+        { primitive: 'plane', image: '#Hub', position: { x: -3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 2, hideAt: 7, fadeMs: 500, label: '', hover: false, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Shd', position: { x: 0.5, y: 3, z: -10 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 4, hideAt: 8, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Cafe', position: { x: 3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: -90, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 8, hideAt: 14, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Cafeteria', position: { x: -3.5, y: 3, z: 3 }, rotation: { x: 0, y: 180, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 14, hideAt: 17, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#Arrow', position: { x: -3.5, y: 3, z: 5 }, rotation: { x: 0, y: 180, z: 0 }, scale: { x: 3, y: 3, z: 3 }, showAt: 17, hideAt: 20, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 },
+        { primitive: 'plane', image: '#sport', position: { x: -3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 20, hideAt: 25, fadeMs: 500, label: '', hover: true, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 }
+      ]
+    },
+    {
+      src: 'assets/video/Location5AR_VR.mp4', label: 'Library Courtyard', thumb: '#thumb4', vo: 'assets/audio/location5.m4a',
+      captions: [
+        { text: 'Library Courtyard', time: 0 },
+        { text: 'This is the courtyard', time: 1.5 },
+        { text: 'Located in the center of the library', time: 4 },
+        { text: 'It offers a quiet outdoor space', time: 5.5 },
+        { text: 'Where students can step away from their studies', time: 7.2 },
+        { text: 'Relax and get fresh air before returning to their work', time: 10 }
+      ],
+      annotations: [
+        { primitive: 'plane', image: '#Courtyard', position: { x: -3.5, y: 3, z: -0.2 }, rotation: { x: 0, y: 90, z: 0 }, scale: { x: 2, y: 2, z: 2 }, showAt: 2, hideAt: 7, fadeMs: 500, label: '', hover: false, hoverFrom: -0.05, hoverTo: 0, hoverSpeed: .5 }
+      ]
+    }
+  ];
+
+  const ROBOT_SCENE = {
+    src: 'assets/video/Robot(1).mp4', label: 'Robot Video', vo: 'assets/audio/robot.m4a',
+    captions: [
+      { text: 'Welcome to the Robot experience.', time: 0 },
+      { text: 'Watch as the robot demonstrates its capabilities.', time: 4 },
+      { text: 'And Roam around from Student centres entrance towards the venue', time: 8 }
+    ],
+    annotations: [
+      { primitive: 'box', color: '#ff0000', position: { x: 0, y: 1.5, z: -3 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 0.4, y: 0.4, z: 0.4 }, showAt: 2, hideAt: 8, fadeMs: 400, label: 'Robot Zone', hover: true, hoverFrom: -0.08, hoverTo: 0.08, hoverSpeed: 1.5 }
+    ]
+  };
+
+  const MUSIC_SRC = 'assets/audio/Musica/Music.mp3';
+  const MUSIC_NORMAL_VOL = 0.12, MUSIC_DUCK_VOL = 0.04, VO_VOL = 1.0;
+  const FADE_IN_MS = 1800, FADE_CROSS_MS = 600, DUCK_MS = 400;
+  const RADIUS = 4, FRAME_Y = 1.6, ROBOT_Y = FRAME_Y + 1.9, FRAME_W = 1.1, FRAME_H = 0.75;
+  const BORDER_CLR = '#888888', ACTIVE_CLR = '#4CC3D9', ROBOT_CLR = '#FFD700', ROBOT_ACTIVE_CLR = '#ffff00';
+
+  let switching = false, activeScene = 0, isRobotMode = false;
+  let captionTimeouts = [], captionHideTimeout = null, cancelTypewriter = null;
+  let annotationTimers = [], activeAnnotations = [];
+
+  let audioReady        = false;
+  let pendingSceneIndex = -1;
+  let pendingRobot      = false;
+
+  function releaseLock() { switching = false; }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Audio Manager — loads scene 0 VO first, then the rest in background
+  // ══════════════════════════════════════════════════════════════════════════
+  const AudioMgr = (() => {
+    let ctx = null, musicNode = null, musicGain = null;
+    let voNode = null, voGain = null, masterGain = null;
+    let musicBuf = null, ready = false;
+    const voBufs  = {};          // loaded buffers
+    const voReady = {};          // true once a key is definitively loaded or failed
+
+    function _ensureCtx() {
+      if (ctx) return;
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = ctx.createGain(); masterGain.gain.setValueAtTime(0, ctx.currentTime); masterGain.connect(ctx.destination);
+      musicGain  = ctx.createGain(); musicGain.gain.setValueAtTime(MUSIC_NORMAL_VOL, ctx.currentTime); musicGain.connect(masterGain);
+      voGain     = ctx.createGain(); voGain.gain.setValueAtTime(0, ctx.currentTime); voGain.connect(masterGain);
+    }
+
+    async function _loadBuf(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed: ${url}`);
+      return ctx.decodeAudioData(await res.arrayBuffer());
+    }
+
+    function _ramp(g, val, dur) {
+      const now = ctx.currentTime;
+      g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.linearRampToValueAtTime(val, now + dur);
+    }
+
+    function _startMusic() {
+      if (!musicBuf) return;
+      if (musicNode) { try { musicNode.stop(); } catch(e){} }
+      musicNode = ctx.createBufferSource(); musicNode.buffer = musicBuf;
+      musicNode.loop = true; musicNode.connect(musicGain); musicNode.start(0);
+    }
+
+    function _stopVO() {
+      if (voNode) { try { voNode.stop(); } catch(e){} voNode = null; }
+      if (ctx && voGain) { voGain.gain.cancelScheduledValues(ctx.currentTime); voGain.gain.setValueAtTime(0, ctx.currentTime); }
+    }
+
+    function _playVO(key) {
+      const buf = voBufs[key];
+      if (!buf || !ctx) return;
+      _stopVO();
+      _ramp(musicGain, MUSIC_DUCK_VOL, DUCK_MS / 1000);
+      voNode = ctx.createBufferSource(); voNode.buffer = buf; voNode.connect(voGain);
+      voGain.gain.cancelScheduledValues(ctx.currentTime);
+      voGain.gain.setValueAtTime(0, ctx.currentTime);
+      voGain.gain.linearRampToValueAtTime(VO_VOL, ctx.currentTime + 0.25);
+      voNode.onended = () => { _ramp(voGain, 0, 0.25); _ramp(musicGain, MUSIC_NORMAL_VOL, DUCK_MS / 1000); voNode = null; };
+      voNode.start(0);
+    }
+
+    async function _loadOne(key, url) {
+      try {
+        voBufs[key] = await _loadBuf(url);
+      } catch(e) {
+        console.warn(`VO failed [${key}]:`, e);
+      }
+      voReady[key] = true; // mark done whether success or fail
+    }
+
+    return {
+      // Start music, load scene-0 VO first, then rest in background
+      async start() {
+        _ensureCtx();
+        if (ctx.state === 'suspended') await ctx.resume();
+        if (ctx.state !== 'running') throw new Error('AudioContext not running');
+        if (!musicBuf) musicBuf = await _loadBuf(MUSIC_SRC);
+        _startMusic();
+        masterGain.gain.cancelScheduledValues(ctx.currentTime);
+        masterGain.gain.setValueAtTime(0, ctx.currentTime);
+        masterGain.gain.linearRampToValueAtTime(1, ctx.currentTime + FADE_IN_MS / 1000);
+        ready = true;
+
+        // Load scene 0 VO first so it's available immediately on first play
+        await _loadOne(0, SCENES[0].vo);
+
+        // Load the rest in background — don't await
+        (async () => {
+          for (let i = 1; i < SCENES.length; i++) await _loadOne(i, SCENES[i].vo);
+          await _loadOne('robot', ROBOT_SCENE.vo);
+        })();
+      },
+
+      // Play a VO immediately — it's guaranteed loaded if called after start() resolves
+      playVO(key) {
+        _playVO(key);
+      },
+
+      // Used when switching scenes — stops current VO, fades music back up, plays new VO
+      onSceneSwitch(key) {
+        if (!ready) return;
+        _stopVO();
+        _ramp(musicGain, MUSIC_NORMAL_VOL, FADE_CROSS_MS / 1000);
+        // If VO for this key isn't loaded yet, wait for it
+        if (voReady[key]) {
+          setTimeout(() => _playVO(key), FADE_CROSS_MS + 150);
+        } else {
+          const wait = () => { if (voReady[key]) { setTimeout(() => _playVO(key), FADE_CROSS_MS + 150); } else { setTimeout(wait, 100); } };
+          wait();
+        }
+      }
+    };
+  })();
+
+  function typewriterEffect(text, onUpdate, onDone, speed = 35) {
+    let i = 0, timer = null;
+    function tick() { if (i > text.length) { if (onDone) onDone(); return; } onUpdate(text.substring(0, i)); i++; timer = setTimeout(tick, speed); }
+    tick();
+    return () => { if (timer) clearTimeout(timer); };
+  }
+
+  function clearCaptions() {
+    if (cancelTypewriter) { cancelTypewriter(); cancelTypewriter = null; }
+    captionTimeouts.forEach(t => clearTimeout(t)); captionTimeouts = [];
+    if (captionHideTimeout) { clearTimeout(captionHideTimeout); captionHideTimeout = null; }
+    const cf = document.querySelector('#caption-follow'), cb = document.querySelector('#caption-bg'), ct = document.querySelector('#caption-text');
+    if (!cf || !cb || !ct) return;
+    cb.removeAttribute('animation__fadein'); cb.removeAttribute('animation__fadeout');
+    ct.removeAttribute('animation__fadein'); ct.removeAttribute('animation__fadeout');
+    ct.setAttribute('value', ''); cb.setAttribute('opacity', '0'); ct.setAttribute('opacity', '0'); cf.setAttribute('visible', false);
+  }
+
+  function showCaption(text) {
+    const cf = document.querySelector('#caption-follow'), cb = document.querySelector('#caption-bg'), ct = document.querySelector('#caption-text');
+    if (!cf || !cb || !ct) return;
+    if (cancelTypewriter) { cancelTypewriter(); cancelTypewriter = null; }
+    cf.setAttribute('visible', true); ct.setAttribute('value', '');
+    cb.removeAttribute('animation__fadeout'); cb.setAttribute('animation__fadein', { property: 'opacity', from: 0, to: 0.65, dur: 200, easing: 'easeOutQuad' });
+    ct.removeAttribute('animation__fadeout'); ct.setAttribute('animation__fadein', { property: 'opacity', from: 0, to: 1, dur: 200, easing: 'easeOutQuad' });
+    setTimeout(() => { cancelTypewriter = typewriterEffect(text, (p) => ct.setAttribute('value', p), () => { cancelTypewriter = null; }, 35); }, 210);
+  }
+
+  function hideCaptionsAnimated() {
+    if (cancelTypewriter) { cancelTypewriter(); cancelTypewriter = null; }
+    const cf = document.querySelector('#caption-follow'), cb = document.querySelector('#caption-bg'), ct = document.querySelector('#caption-text');
+    if (!cf || !cb || !ct) return;
+    cb.removeAttribute('animation__fadein'); ct.removeAttribute('animation__fadein');
+    cb.setAttribute('animation__fadeout', { property: 'opacity', from: parseFloat(cb.getAttribute('opacity') || 0.65), to: 0, dur: 250, easing: 'easeInQuad' });
+    ct.setAttribute('animation__fadeout', { property: 'opacity', from: parseFloat(ct.getAttribute('opacity') || 1), to: 0, dur: 250, easing: 'easeInQuad' });
+    setTimeout(() => { ct.setAttribute('value', ''); cf.setAttribute('visible', false); }, 260);
+  }
+
+  function playSceneCaptions(captionList) {
+    clearCaptions(); if (!captionList || captionList.length === 0) return;
+    captionList.forEach(c => { const t = setTimeout(() => showCaption(c.text), c.time * 1000); captionTimeouts.push(t); });
+    const last = captionList[captionList.length - 1];
+    captionHideTimeout = setTimeout(hideCaptionsAnimated, (last.time + 4) * 1000);
+  }
+
+  function clearAnnotations() {
+    annotationTimers.forEach(t => clearTimeout(t)); annotationTimers = [];
+    activeAnnotations.forEach(el => {
+      const comp = el.components['annotation-fade'];
+      if (comp) { comp.fade(comp._opacity, 0, () => { if (el.parentNode) el.parentNode.removeChild(el); }); }
+      else { if (el.parentNode) el.parentNode.removeChild(el); }
+    });
+    activeAnnotations = [];
+  }
+
+  function buildAnnotationEntity(ann, id) {
+    const wrapper = document.createElement('a-entity');
+    wrapper.setAttribute('id', id);
+    wrapper.setAttribute('annotation-fade',
+      `duration: ${ann.fadeMs || 400}; ` +
+      `hoverFrom: ${ann.hoverFrom !== undefined ? ann.hoverFrom : -0.08}; ` +
+      `hoverTo: ${ann.hoverTo !== undefined ? ann.hoverTo : 0.08}; ` +
+      `hoverSpeed: ${ann.hoverSpeed || 1.5}`
+    );
+    wrapper.setAttribute('position', ann.position);
+    wrapper.setAttribute('rotation', ann.rotation || { x: 0, y: 0, z: 0 });
+    wrapper.setAttribute('scale',    ann.scale    || { x: 1, y: 1, z: 1 });
+    wrapper.object3D.visible = false;
+    wrapper._annHover = ann.hover || false;
+
+    if (ann.model) {
+      const mdl = document.createElement('a-entity');
+      mdl.setAttribute('gltf-model', ann.model);
+      wrapper.appendChild(mdl);
+    } else {
+      const prim = document.createElement(`a-${ann.primitive || 'box'}`);
+      if (ann.image) {
+        prim.setAttribute('material', `src: ${ann.image}; transparent: true; alphaTest: 0.05; opacity: 0`);
+      } else {
+        prim.setAttribute('color', ann.color || '#ffffff');
+        prim.setAttribute('opacity', '0');
+      }
+      if (ann.primitive === 'torus')  { prim.setAttribute('radius', '0.4'); prim.setAttribute('radius-tubular', '0.05'); prim.setAttribute('segments-tubular', '20'); }
+      if (ann.primitive === 'sphere') { prim.setAttribute('radius', '0.5'); }
+      wrapper.appendChild(prim);
+    }
+
+    if (ann.label) {
+      const labelBg = document.createElement('a-plane');
+      labelBg.setAttribute('color', '#000000'); labelBg.setAttribute('opacity', '0.7');
+      labelBg.setAttribute('width', '1.2'); labelBg.setAttribute('height', '0.22');
+      labelBg.setAttribute('position', '0 0.75 0'); labelBg.setAttribute('material', 'transparent: true');
+      const labelText = document.createElement('a-text');
+      labelText.setAttribute('value', ann.label); labelText.setAttribute('align', 'center');
+      labelText.setAttribute('width', '1.1'); labelText.setAttribute('color', '#ffffff');
+      labelText.setAttribute('position', '0 0.75 0.01');
+      wrapper.appendChild(labelBg); wrapper.appendChild(labelText);
+    }
+    return wrapper;
+  }
+
+  function playSceneAnnotations(annotationList) {
+    clearAnnotations(); if (!annotationList || annotationList.length === 0) return;
+    const root = document.querySelector('#annotation-root');
+    annotationList.forEach((ann, i) => {
+      const id = `ann-${Date.now()}-${i}`;
+      const entity = buildAnnotationEntity(ann, id);
+      root.appendChild(entity); activeAnnotations.push(entity);
+      requestAnimationFrame(() => {
+        const showTimer = setTimeout(() => { const comp = entity.components['annotation-fade']; if (comp) comp.fade(0, 1, null); }, ann.showAt * 1000);
+        const hideTimer = setTimeout(() => {
+          const comp = entity.components['annotation-fade'];
+          if (comp) { comp.fade(1, 0, () => { if (entity.parentNode) entity.parentNode.removeChild(entity); activeAnnotations = activeAnnotations.filter(e => e !== entity); }); }
+        }, ann.hideAt * 1000);
+        annotationTimers.push(showTimer, hideTimer);
+      });
+    });
+  }
+
+  function flashAndSwitch(sceneIndex) {
+    const overlay = document.querySelector('#flash-overlay').components['fade-overlay'];
+    const vid = document.querySelector('#bg-vid1'), vsphere = document.querySelector('#videosphere');
+    const src = SCENES[sceneIndex].src, safetyTimer = setTimeout(releaseLock, 8000);
+    overlay.fade(0, 1, 450, () => {
+      const loadId = Date.now(); vid._expectedLoadId = loadId;
+      vid.pause(); vid.src = src; vid.load();
+      function doFadeOut() {
+        if (vid._expectedLoadId !== loadId) return;
+        clearTimeout(safetyTimer); isRobotMode = false; vid.play();
+        vsphere.setAttribute('src', ''); vsphere.setAttribute('src', '#bg-vid1');
+        overlay.fade(1, 0, 600, () => releaseLock());
+      }
+      function onR()  { vid.removeEventListener('loadeddata', onR); vid.removeEventListener('canplaythrough', onR2); clearTimeout(fb); doFadeOut(); }
+      function onR2() { vid.removeEventListener('loadeddata', onR); vid.removeEventListener('canplaythrough', onR2); clearTimeout(fb); doFadeOut(); }
+      vid.addEventListener('loadeddata', onR); vid.addEventListener('canplaythrough', onR2);
+      const fb = setTimeout(() => { vid.removeEventListener('loadeddata', onR); vid.removeEventListener('canplaythrough', onR2); if (vid._expectedLoadId === loadId) doFadeOut(); }, 5000);
+    });
+  }
+
+  function glitchAndSwitch(targetSrc, onVideoReady) {
+    const glitchEl = document.querySelector('#glitch-overlay');
+    const vid = document.querySelector('#bg-vid1'), vsphere = document.querySelector('#videosphere');
+    const safetyTimer = setTimeout(releaseLock, 8000);
+    let mat = null;
+    const mesh = glitchEl.getObject3D('mesh');
+    if (mesh) mesh.traverse(n => { if (n.isMesh) mat = n.material; });
+    if (!mat) { releaseLock(); return; }
+    mat.transparent = true; mat.depthWrite = false; glitchEl.object3D.visible = true;
+    const gC = [0x000000,0xff0000,0x00ff00,0x0000ff,0xffffff,0x000000,0xff00ff,0x000000];
+    const gT = [60,80,50,90,60,70,80,60]; let step = 0;
+    function runGlitch() {
+      if (step >= gC.length) {
+        const loadId = Date.now(); vid._expectedLoadId = loadId;
+        vid.pause(); vid.src = targetSrc; vid.load();
+        function doExit() {
+          if (vid._expectedLoadId !== loadId) return;
+          clearTimeout(safetyTimer); onVideoReady && onVideoReady(); vid.play();
+          vsphere.setAttribute('src', ''); vsphere.setAttribute('src', '#bg-vid1');
+          let es = 0;
+          const ec = [0x000000,0xff00ff,0x00ff00,0x000000,0xff0000,0x000000];
+          const et = [70,60,80,60,70,60];
+          function runExit() {
+            if (es >= ec.length) { mat.opacity = 0; glitchEl.object3D.visible = false; releaseLock(); return; }
+            mat.color.setHex(ec[es]); mat.opacity = es % 2 === 0 ? 0.85 : 0.3; setTimeout(runExit, et[es++]);
+          }
+          runExit();
+        }
+        function onL() { vid.removeEventListener('loadeddata',onL); vid.removeEventListener('canplaythrough',onC); clearTimeout(fbk); doExit(); }
+        function onC() { vid.removeEventListener('loadeddata',onL); vid.removeEventListener('canplaythrough',onC); clearTimeout(fbk); doExit(); }
+        vid.addEventListener('loadeddata', onL); vid.addEventListener('canplaythrough', onC);
+        const fbk = setTimeout(() => { vid.removeEventListener('loadeddata',onL); vid.removeEventListener('canplaythrough',onC); if (vid._expectedLoadId === loadId) doExit(); }, 5000);
+        return;
+      }
+      mat.color.setHex(gC[step]); mat.opacity = step % 2 === 0 ? 0.9 : 0.2; setTimeout(runGlitch, gT[step++]);
+    }
+    runGlitch();
+  }
+
+  document.querySelector('a-scene').addEventListener('loaded', () => {
+    buildFrames();
+    const vid = document.querySelector('#bg-vid1');
+    const ppFollow = document.querySelector('#playpause-follow');
+    const robotWrap = document.querySelector('#robot-wrap');
+    const robotFrame = document.querySelector('#robot-frame');
+    const robotBorder = document.querySelector('#robot-border');
+    let isVisible = false, audioStarted = false, audioStarting = false;
+
+    function onAudioReady() {
+      audioReady = true;
+      if (pendingRobot) {
+        pendingRobot = false; pendingSceneIndex = -1;
+        _execSwitchToRobot();
+      } else if (pendingSceneIndex !== -1) {
+        const idx = pendingSceneIndex; pendingSceneIndex = -1;
+        _execSwitchScene(idx);
+      } else {
+        // Default: play scene 0 — VO is guaranteed loaded since start() awaited it
+        playSceneCaptions(SCENES[0].captions);
+        playSceneAnnotations(SCENES[0].annotations);
+        AudioMgr.playVO(0);
+      }
+    }
+
+    async function tryStartAudio() {
+      if (audioStarted || audioStarting) return;
+      audioStarting = true;
+      try {
+        await AudioMgr.start(); // waits until music + scene-0 VO are both loaded
+        audioStarted = true;
+        ['click','touchstart','keydown','mousedown'].forEach(e => document.removeEventListener(e, tryStartAudio));
+        document.querySelector('a-scene').removeEventListener('enter-vr', tryStartAudio);
+        setTimeout(onAudioReady, FADE_IN_MS + 300);
+      } catch(e) { console.error('Audio start failed:', e); } finally { audioStarting = false; }
+    }
+
+    ['click','touchstart','keydown','mousedown'].forEach(e => document.addEventListener(e, tryStartAudio));
+    document.querySelector('a-scene').addEventListener('enter-vr', tryStartAudio);
+
+    function highlightActive() {
+      SCENES.forEach((_, i) => { const b = document.querySelector(`#frame-border-${i}`); if (b) b.setAttribute('color', !isRobotMode && i === activeScene ? ACTIVE_CLR : BORDER_CLR); });
+      if (robotBorder) robotBorder.setAttribute('color', isRobotMode ? ROBOT_ACTIVE_CLR : ROBOT_CLR);
+    }
+
+    function _execSwitchScene(i) {
+      switching = true; activeScene = i; isRobotMode = false; highlightActive();
+      AudioMgr.onSceneSwitch(i);
+      playSceneCaptions(SCENES[i].captions);
+      playSceneAnnotations(SCENES[i].annotations);
+      flashAndSwitch(i);
+    }
+
+    function _execSwitchToRobot() {
+      switching = true; isRobotMode = true; highlightActive();
+      AudioMgr.onSceneSwitch('robot');
+      playSceneCaptions(ROBOT_SCENE.captions);
+      playSceneAnnotations(ROBOT_SCENE.annotations);
+      glitchAndSwitch(ROBOT_SCENE.src, () => {});
+    }
+
+    function switchScene(i) {
+      if (switching || (!isRobotMode && i === activeScene)) return;
+      if (!audioReady) { pendingSceneIndex = i; pendingRobot = false; return; }
+      _execSwitchScene(i);
+    }
+
+    function switchToRobot() {
+      if (switching || isRobotMode) return;
+      if (!audioReady) { pendingRobot = true; pendingSceneIndex = -1; return; }
+      _execSwitchToRobot();
+    }
+
+    function buildFrames() {
+      const root = document.querySelector('#frames-root');
+      SCENES.forEach((scene, i) => {
+        const wrapper = document.createElement('a-entity');
+        wrapper.setAttribute('id', `frame-wrap-${i}`); wrapper.setAttribute('visible', 'false'); wrapper.setAttribute('billboard', '');
+        const backdrop = document.createElement('a-plane');
+        backdrop.setAttribute('width', FRAME_W + 0.12); backdrop.setAttribute('height', FRAME_H + 0.22);
+        backdrop.setAttribute('color', '#0a0a0a'); backdrop.setAttribute('opacity', '0.88'); backdrop.setAttribute('position', '0 0 -0.02');
+        const face = document.createElement('a-plane');
+        face.setAttribute('class', 'frame-btn'); face.setAttribute('id', `frame-${i}`);
+        face.setAttribute('width', FRAME_W); face.setAttribute('height', FRAME_H);
+        face.setAttribute('material', `src: ${scene.thumb}; transparent: false; color: #2a2a3e`);
+        const border = document.createElement('a-torus');
+        border.setAttribute('id', `frame-border-${i}`); border.setAttribute('radius', '0.48');
+        border.setAttribute('radius-tubular', '0.018'); border.setAttribute('color', BORDER_CLR);
+        border.setAttribute('position', '0 0 0.01'); border.setAttribute('segments-tubular', '20');
+        const label = document.createElement('a-text');
+        label.setAttribute('value', scene.label); label.setAttribute('align', 'center');
+        label.setAttribute('position', `0 ${-(FRAME_H / 2 + 0.18)} 0`); label.setAttribute('width', '2.5'); label.setAttribute('color', '#dddddd');
+        wrapper.appendChild(backdrop); wrapper.appendChild(face); wrapper.appendChild(border); wrapper.appendChild(label);
+        root.appendChild(wrapper);
+      });
+    }
+
+    function repositionFrames() {
+      const rig = document.querySelector('#rig'), rigPos = rig.object3D.position, total = SCENES.length;
+      SCENES.forEach((_, i) => {
+        const wrap = document.querySelector(`#frame-wrap-${i}`); if (!wrap) return;
+        const angleDeg = (360 / total) * i - 90, angleRad = THREE.MathUtils.degToRad(angleDeg);
+        wrap.setAttribute('position', { x: rigPos.x + RADIUS * Math.cos(angleRad), y: FRAME_Y, z: rigPos.z + RADIUS * Math.sin(angleRad) });
+      });
+      if (robotWrap) robotWrap.setAttribute('position', { x: rigPos.x, y: ROBOT_Y, z: rigPos.z - RADIUS });
+    }
+
+    SCENES.forEach((_, i) => {
+      const face = document.querySelector(`#frame-${i}`); if (!face) return;
+      face.addEventListener('click', () => switchScene(i));
+      face.addEventListener('mouseenter', () => {
+        if (switching) return;
+        face.setAttribute('animation__hover', { property: 'scale', to: '1.08 1.08 1.08', dur: 180, easing: 'easeOutQuad' });
+        document.querySelector(`#frame-border-${i}`)?.setAttribute('animation__spin', { property: 'rotation', to: '0 0 360', dur: 2000, easing: 'linear', loop: true });
+      });
+      face.addEventListener('mouseleave', () => {
+        face.setAttribute('animation__hover', { property: 'scale', to: '1 1 1', dur: 180, easing: 'easeOutQuad' });
+        const b = document.querySelector(`#frame-border-${i}`);
+        if (b) { b.removeAttribute('animation__spin'); b.setAttribute('rotation', '0 0 0'); }
+      });
+    });
+
+    if (robotFrame) {
+      robotFrame.addEventListener('click', () => switchToRobot());
+      robotFrame.addEventListener('mouseenter', () => {
+        if (switching) return;
+        robotFrame.setAttribute('animation__hover', { property: 'scale', to: '1.08 1.08 1.08', dur: 180, easing: 'easeOutQuad' });
+        robotBorder?.setAttribute('animation__spin', { property: 'rotation', to: '0 0 360', dur: 1500, easing: 'linear', loop: true });
+      });
+      robotFrame.addEventListener('mouseleave', () => {
+        robotFrame.setAttribute('animation__hover', { property: 'scale', to: '1 1 1', dur: 180, easing: 'easeOutQuad' });
+        if (robotBorder) { robotBorder.removeAttribute('animation__spin'); robotBorder.setAttribute('rotation', '0 0 0'); }
+      });
+    }
+
+    document.querySelector('#PlayVid').addEventListener('click', () => vid.play());
+    document.querySelector('#StopVid').addEventListener('click', () => vid.pause());
+    document.querySelectorAll('.world-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => btn.setAttribute('animation', { property: 'scale', to: '1.2 1.2 1.2', dur: 180, easing: 'easeOutQuad' }));
+      btn.addEventListener('mouseleave', () => btn.setAttribute('animation', { property: 'scale', to: '1 1 1', dur: 180, easing: 'easeOutQuad' }));
+    });
+
+    const cursor = document.querySelector('#cursor');
+    cursor.setAttribute('animation__click', { property: 'scale', from: '1 1 1', to: '0.6 0.6 0.6', dur: 100, easing: 'easeInCubic', startEvents: 'click' });
+    cursor.setAttribute('animation__clickreset', { property: 'scale', from: '0.6 0.6 0.6', to: '1 1 1', dur: 100, easing: 'easeOutCubic', startEvents: 'animationcomplete__click' });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.code !== 'KeyQ' || event.repeat) return;
+      isVisible = !isVisible;
+      ppFollow.setAttribute('visible', isVisible);
+      if (robotWrap) robotWrap.setAttribute('visible', isVisible);
+      if (isVisible) { repositionFrames(); if (robotFrame) robotFrame.classList.add('robot-btn'); }
+      else { if (robotFrame) robotFrame.classList.remove('robot-btn'); }
+      SCENES.forEach((_, i) => {
+        const wrap = document.querySelector(`#frame-wrap-${i}`), face = document.querySelector(`#frame-${i}`);
+        if (!wrap || !face) return;
+        wrap.setAttribute('visible', isVisible);
+        if (isVisible) {
+          face.classList.add('frame-btn');
+          const pos = wrap.getAttribute('position');
+          wrap.setAttribute('animation__appear', { property: 'position', from: `${pos.x} ${FRAME_Y - 0.5} ${pos.z}`, to: `${pos.x} ${FRAME_Y} ${pos.z}`, dur: 450, easing: 'easeOutBack' });
+        } else { face.classList.remove('frame-btn'); }
+      });
+      if (isVisible && robotWrap) {
+        const rPos = robotWrap.getAttribute('position');
+        robotWrap.setAttribute('animation__appear', { property: 'position', from: `${rPos.x} ${ROBOT_Y + 0.8} ${rPos.z}`, to: `${rPos.x} ${ROBOT_Y} ${rPos.z}`, dur: 500, easing: 'easeOutBack' });
+      }
+      if (isVisible) highlightActive();
+    });
+
+    highlightActive();
+  });
+</script>
+</body>
+</html>
