@@ -69,7 +69,7 @@ AR-VR-Group-6/
 
 ## ☁️ Cloudflare R2
 
-The videos are too large to host on Vercel directly (some are over 500MB), so we uploaded them all to **Cloudflare R2** which serves them as a CDN. All the audio and images are on there too.
+The videos are too large to host on GitHub or Vercel directly (some are over 500MB), so we uploaded them all to **Cloudflare R2** which serves them as a CDN. All the audio and images are on there too.
 
 Everything in the `assets/` folder maps to our R2 bucket:
 
@@ -78,3 +78,15 @@ https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/
 ```
 
 This means the site loads fast no matter where it's hosted because the heavy files come straight from Cloudflare's global network rather than the hosting platform.
+
+---
+
+## 🛠️ Troubleshooting
+
+**Black screen when loading the tour?**
+
+This is usually just the 360° video buffering on first load. Try these in order:
+
+1. Click anywhere on the page first — browsers block video autoplay until you interact
+2. Wait a few seconds for the video to buffer
+3. Hard refresh the page with **`Ctrl + Shift + R`**
