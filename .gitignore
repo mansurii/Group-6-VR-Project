@@ -41,10 +41,3 @@ Thumbs.db
 
 # Node.js modules
 node_modules/
-
-# Ignore Vercel project-specific files
-.vercel/
-
-# Un-ignore the css/ and js/ directories
-!css/
-!js/
