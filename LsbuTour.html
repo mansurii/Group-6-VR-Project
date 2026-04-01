@@ -269,7 +269,7 @@
 <body>
 <a-scene position-picker>
   <a-assets>
-    <video id="bg-vid1" src="https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Location1_AR_VR.mp4" autoplay loop muted crossorigin="anonymous"></video>
+    <video id="bg-vid1" src="assets/video/Location1_AR_VR.mp4" autoplay loop muted crossorigin="anonymous"></video>
     <img id="Pause"         src="assets/images/Pause.png">
     <img id="Play"          src="assets/images/Play.png">
     <img id="thumb0"        src="assets/images/l1.jpeg">
@@ -277,7 +277,7 @@
     <img id="thumb2"        src="assets/images/l3.jpeg">
     <img id="thumb3"        src="assets/images/l4.jpeg">
     <img id="thumb4"        src="assets/images/l5.jpeg">
-    <img id="thumb-robot"   src="assets/images/thumb_robot.jpeg">
+    <img id="thumb-robot"   src="assets/images/robot.jpg">
     <img id="StudentCentre" src="assets/anims/Logo.png">
     <img id="Venue"         src="assets/anims/The Venue.png">
     <img id="Arrow"         src="assets/anims/Arrow.png">
@@ -345,7 +345,7 @@
 <script>
   const SCENES = [
     {
-      src: 'https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Location1_AR_VR.mp4', label: 'Student Centre', thumb: '#thumb0', vo: 'assets/audio/location1.m4a',
+      src: 'assets/video/Location1_AR_VR.mp4', label: 'Student Centre', thumb: '#thumb0', vo: 'assets/audio/location1.m4a',
       captions: [
         { text: 'Student Centre', time: 0 },
         { text: 'Welcome to the first floor of the Student Centre', time: 2 },
@@ -363,7 +363,7 @@
       ]
     },
     {
-      src: 'https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Location2_AR_VR.mp4', label: 'Cafeteria', thumb: '#thumb1', vo: 'assets/audio/location2.m4a',
+      src: 'assets/video/Location2_AR_VR.mp4', label: 'Cafeteria', thumb: '#thumb1', vo: 'assets/audio/location2.m4a',
       captions: [
         { text: 'Cafeteria', time: 0 },
         { text: 'Welcome to the Cafeteria area', time: 3 },
@@ -384,7 +384,7 @@
       ]
     },
     {
-      src: 'https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Location3_AR_VR.mp4', label: 'Outside Student Centre', thumb: '#thumb2', vo: 'assets/audio/location3.m4a',
+      src: 'assets/video/Location3_AR_VR.mp4', label: 'Outside Student Centre', thumb: '#thumb2', vo: 'assets/audio/location3.m4a',
       captions: [
         { text: 'This area is just outside the Student Centre', time: 0 },
         { text: 'Directly opposite is Tescos for quick shopping', time: 3 },
@@ -405,7 +405,7 @@
       ]
     },
     {
-      src: 'https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Location4_AR_VR.mp4', label: 'Lsbu Hub', thumb: '#thumb3', vo: 'assets/audio/location4.m4a',
+      src: 'assets/video/Location4_AR_VR.mp4', label: 'Lsbu Hub', thumb: '#thumb3', vo: 'assets/audio/location4.m4a',
       captions: [
         { text: 'Lsbu Hub', time: 0 },
         { text: 'This is Lsbu Hub', time: 2 },
@@ -426,7 +426,7 @@
       ]
     },
     {
-      src: 'https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Location5AR_VR.mp4', label: 'Library Courtyard', thumb: '#thumb4', vo: 'assets/audio/location5.m4a',
+      src: 'assets/video/Location5AR_VR.mp4', label: 'Library Courtyard', thumb: '#thumb4', vo: 'assets/audio/location5.m4a',
       captions: [
         { text: 'Library Courtyard', time: 0 },
         { text: 'This is the courtyard', time: 1.5 },
@@ -441,8 +441,9 @@
     }
   ];
 
+  // did not have enough time to do voiceover for robot video
   const ROBOT_SCENE = {
-    src: 'https://pub-5284e2be46f649b793c07aa2d104bb68.r2.dev/Robot(1).mp4', label: 'Robot Video', vo: 'assets/audio/robot.m4a',
+    src: 'assets/video/Robot(1).mp4', label: 'Robot Video', vo: 'assets/audio/robot.m4a',
     captions: [
       { text: 'Welcome to the Robot experience.', time: 0 },
       { text: 'Watch as the robot demonstrates its capabilities.', time: 4 },

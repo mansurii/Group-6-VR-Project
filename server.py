@@ -36,9 +36,7 @@ def js(filename):
 def lib(filename):
     return send_from_directory(os.path.join(BASE, 'lib'), filename)
 
-
 # Assets
-
 @app.route('/assets/images/<path:filename>')
 def assets_images(filename):
     return send_from_directory(os.path.join(BASE, 'assets', 'images'), filename)
