@@ -8,7 +8,7 @@ This is our Group 6 project for London South Bank University. We built a virtual
 
 We filmed five real locations on campus and turned them into 360° videos with voiceovers, captions, and on-screen labels that pop up as you look around.
 
-> **This is the `local-dev` branch.** All videos, audio and images are served directly from your PC — no Cloudflare R2 needed. Just run `server.py` and everything loads from your local `assets/` folder.
+> **This is the `local-dev` branch.** All videos, audio and images are served directly from your PC — no Cloudflare R2 needed. Just run `app.py` and everything loads from your local `assets/` folder.
 
 ---
 
@@ -26,14 +26,14 @@ We filmed five real locations on campus and turned them into 360° videos with v
 ## How to run it locally
 
 ```bash
-python server.py
+python app.py
 ```
 
 Open your browser and go to **https://localhost:5000**
 
 You'll get a certificate warning — just click Advanced and then Proceed. This is normal for a local self-signed certificate.
 
-> Make sure `cert.pem` is in the same folder as `server.py`
+> Make sure `cert.pem` is in the same folder as `app.py`. If `cert.pem` is missing, the server will fall back to `http://localhost:5000` automatically.
 
 All assets load from your local `assets/` folder — no internet connection needed once the page is open.
 
@@ -57,7 +57,8 @@ AR-VR-Group-6/
 │
 ├── 📄 index.html          ← The landing page — shows what's in the tour
 ├── 📄 LsbuTour.html       ← The actual VR experience (local paths)
-├── 📄 server.py           ← Run this to start the local server
+├── 📄 app.py              ← Run this to start the local server
+├── 📄 cert.pem            ← SSL certificate for HTTPS on localhost
 │
 ├── 📂 css/
 │   └── 📄 index.css       ← Styles for the landing page
