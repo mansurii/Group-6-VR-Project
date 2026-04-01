@@ -1,4 +1,5 @@
 import os
+import ssl
 from flask import Flask, send_from_directory, abort
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +37,7 @@ def js(filename):
 def lib(filename):
     return send_from_directory(os.path.join(BASE, 'lib'), filename)
 
+
 # Assets
 @app.route('/assets/images/<path:filename>')
 def assets_images(filename):
@@ -64,11 +66,24 @@ def catch_all(filename):
     abort(404)
 
 
-# Run locally
+# Run locally with SSL
 if __name__ == '__main__':
-    print()
-    print('  Group 6 VR Project')
-    print('  Running at: http://localhost:5000')
-    print('  Press Ctrl+C to stop.')
-    print()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    cert = os.path.join(BASE, 'cert.pem')
+
+    if os.path.isfile(cert):
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(cert)
+        print()
+        print('  Group 6 VR Project')
+        print('  Running at: https://localhost:5000')
+        print('  Press Ctrl+C to stop.')
+        print()
+        app.run(host='0.0.0.0', port=5000, ssl_context=context, debug=True)
+    else:
+        print()
+        print('  Group 6 VR Project')
+        print('  cert.pem not found — running without SSL')
+        print('  Running at: http://localhost:5000')
+        print('  Press Ctrl+C to stop.')
+        print()
+        app.run(host='0.0.0.0', port=5000, debug=True)
